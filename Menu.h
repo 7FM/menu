@@ -76,13 +76,24 @@ namespace Menu
 
 // ----------------------------------------------------------------------------
 
+#define var(z) _str##z##var
+#define decl(x) var(x)
+#define dummyVariable() decl(__LINE__)
+
 #define MenuItem(Name, Label, Next, Previous, Parent, Child, Callback) \
-  extern const Menu::Item_t Next, Previous, Parent, Child; \
-  const Menu::Item_t PROGMEM Name = { \
-    &Next, &Previous, &Parent, &Child, \
-    &Callback, \
-    Label \
-  }
+    extern const Menu::Item_t Next, Previous, Parent, Child;           \
+    static const char dummyVariable()[] PROGMEM = Label;               \
+    const Menu::Item_t Name PROGMEM = {                                \
+        &Next, &Previous, &Parent, &Child,                             \
+        &Callback,                                                     \
+        dummyVariable()}
+
+#define MenuItemPtr(Name, Label, Next, Previous, Parent, Child, Callback) \
+    static const char dummyVariable()[] PROGMEM = Label;                  \
+    const Menu::Item_t Name PROGMEM = {                                   \
+        Next, Previous, Parent, Child,                                    \
+        Callback,                                                         \
+        dummyVariable()}
 
 // ----------------------------------------------------------------------------
 
