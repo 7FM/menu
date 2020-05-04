@@ -9,69 +9,66 @@
 #define __have_menu_h__
 
 #ifdef ARDUINO
-# include <Arduino.h>
+#include <Arduino.h>
 #else
-# include <avr/pgmspace.h>
-# include <inttypes.h>
-# include <stdlib.h>
+#include <avr/pgmspace.h>
+#include <inttypes.h>
+#include <stdlib.h>
 #endif
 
-namespace Menu
-{
-  typedef enum Action_s {
-    actionNone    = 0,
-    actionLabel   = (1<<0), // render label when user scrolls through menu items
-    actionDisplay = (1<<1), // display menu, after user selected a menu item
-    actionTrigger = (1<<2), // trigger was pressed while menue was already active
-    actionParent  = (1<<3), // before moving to parent, useful for e.g. "save y/n?" or autosave
-    actionCustom  = (1<<7)  
-  } Action_t;
+namespace Menu {
+typedef enum Action_s {
+    actionNone = 0,
+    actionLabel = (1 << 0),   // render label when user scrolls through menu items
+    actionDisplay = (1 << 1), // display menu, after user selected a menu item
+    actionTrigger = (1 << 2), // trigger was pressed while menu was already active
+    actionParent = (1 << 3),  // before moving to parent, useful for e.g. "save y/n?" or autosave
+    actionCustom = (1 << 7)
+} Action_t;
 
-  typedef bool (*Callback_t)(Action_t);
+typedef bool (*Callback_t)(Action_t);
 
-  typedef struct Info_s {
+typedef struct Info_s {
     uint8_t siblings;
     uint8_t position;
-  } Info_t;
+} Info_t;
 
-  typedef struct Item_s {
-    struct Item_s const * Next;
-    struct Item_s const * Previous;
-    struct Item_s const * Parent;
-    struct Item_s const * Child;
+typedef struct Item_s {
+    const struct Item_s *Next;
+    const struct Item_s *Previous;
+    const struct Item_s *Parent;
+    const struct Item_s *Child;
     const Callback_t Callback;
-    const char * Label;  
-  } Item_t;
+    const char *Label;
+} Item_t;
 
-  typedef void (*RenderCallback_t)(const Item_t *, uint8_t);
+typedef void (*RenderCallback_t)(const Item_t *, uint8_t);
 
-  // a typesafe null item
-  extern const Item_t NullItem;
-
-  class Engine {
+class Engine {
   public:
-    const Item_t * currentItem;
-    const Item_t * previousItem;
-    const Item_t * lastInvokedItem; 
+    const Item_t *currentItem;
+    const Item_t *previousItem = NULL;
+    const Item_t *lastInvokedItem = NULL;
 
-  public:
-    Engine();
-    Engine(const Item_t * initialItem);
+    bool forceNewRender = true;
 
   public:
-    void navigate(const Item_t * targetItem);
-    void invoke(void);
-    bool executeCallbackAction(const Action_t action) const;
-    void render(const RenderCallback_t render, uint8_t maxDisplayedMenuItems) const;
+    Engine(const Item_t *startItem) : currentItem(startItem) {
+    }
+    void navigate(const Item_t *targetItem);
+    void invoke();
+    bool executeCallbackAction(const Action_t action);
+    void render(const RenderCallback_t render, uint8_t maxDisplayedMenuItems);
 
   public:
-    Info_t getItemInfo(const Item_t * item) const;
-    const   char * getLabel (const Item_t * item = NULL) const;
-    const Item_t * getPrev  (const Item_t * item = NULL) const;
-    const Item_t * getNext  (const Item_t * item = NULL) const;
-    const Item_t * getParent(const Item_t * item = NULL) const;
-    const Item_t * getChild (const Item_t * item = NULL) const;
-  };
+    static Info_t getItemInfo(const Item_t *item);
+    static const char *getLabel(const Item_t *item);
+    static const Item_t *getPrev(const Item_t *item);
+    static const Item_t *getNext(const Item_t *item);
+    // We expect getParent to never be NULL!
+    static const Item_t *getParent(const Item_t *item);
+    static const Item_t *getChild(const Item_t *item);
+};
 }; // end namespace Menu
 
 // ----------------------------------------------------------------------------
