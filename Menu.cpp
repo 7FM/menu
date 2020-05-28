@@ -124,6 +124,7 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
         forceNewRender = true;
     }
 
+    // Absolute index
     uint8_t renderPosLow = currentItemInfo.position - 1;
 
     // Going forward? If so we have to move the render frame one position up
@@ -132,14 +133,16 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
     }
 
     const Item_t *currentItemBackup = currentItemInfo.item;
-    const uint8_t currentPositionBackup = currentItemInfo.position;
+    // Calculate the relative index of the shown elements (starting at 1)
+    const uint8_t currentPositionBackup = currentItemInfo.position - start;
 
     uint8_t itemCount = 0;
 
     // first item in current menu level
     for (currentItemInfo.item = getChild(getParent(currentItemInfo.item)); currentItemInfo.item != NULL && currentItemInfo.position < maxDisplayedMenuItems + start; currentItemInfo.item = getNext(currentItemInfo.item)) {
         if (itemCount >= start && (forceNewRender || (itemCount >= renderPosLow && itemCount <= renderPosLow + 1))) {
-            currentItemInfo.position = itemCount - start;
+            // Update the local index (starting at 1)
+            currentItemInfo.position = itemCount - start + 1;
             render(*this, currentItemBackup);
             executeCallbackAction(actionDisplay);
         }

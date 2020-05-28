@@ -45,7 +45,7 @@ typedef struct {
     const Item_t *item;
 } Info_t;
 
-typedef void RenderCallback_t(const Engine&, const Item_t*);
+typedef void RenderCallback_t(const Engine &, const Item_t *);
 
 class Engine {
   public:
