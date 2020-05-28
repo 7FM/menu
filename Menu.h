@@ -17,51 +17,56 @@
 #endif
 
 namespace Menu {
-typedef enum Action_s {
-    actionNone = 0,
-    actionLabel = (1 << 0),   // render label when user scrolls through menu items
+typedef enum {
+    //actionNone = 0,
+    //actionLabel = (1 << 0),   // render label when user scrolls through menu items
     actionDisplay = (1 << 1), // display menu, after user selected a menu item
     actionTrigger = (1 << 2), // trigger was pressed while menu was already active
     actionParent = (1 << 3),  // before moving to parent, useful for e.g. "save y/n?" or autosave
     actionCustom = (1 << 7)
 } Action_t;
 
-typedef bool (*Callback_t)(Action_t);
+class Engine;
 
-typedef struct Info_s {
-    uint8_t siblings;
-    uint8_t position;
-} Info_t;
+typedef bool Callback_t(Action_t, Engine &);
 
 typedef struct Item_s {
     const struct Item_s *Next;
     const struct Item_s *Previous;
     const struct Item_s *Parent;
     const struct Item_s *Child;
-    const Callback_t Callback;
+    const Callback_t *Callback;
     const char *Label;
 } Item_t;
 
-typedef void (*RenderCallback_t)(const Item_t *, uint8_t);
+typedef struct {
+    uint8_t siblings;
+    uint8_t position;
+    const Item_t *item;
+} Info_t;
+
+typedef void RenderCallback_t(const Engine&, const Item_t*);
 
 class Engine {
   public:
-    const Item_t *currentItem;
+    Info_t currentItemInfo = {0, 0, NULL};
     const Item_t *previousItem = NULL;
-    const Item_t *lastInvokedItem = NULL;
 
     bool forceNewRender = true;
 
   public:
-    Engine(const Item_t *startItem) : currentItem(startItem) {
+    Engine(const Item_t *startItem) {
+        currentItemInfo.item = startItem;
     }
     void navigate(const Item_t *targetItem);
     void invoke();
-    bool executeCallbackAction(const Action_t action);
-    void render(const RenderCallback_t render, uint8_t maxDisplayedMenuItems);
+    bool executeCallbackAction(const Action_t action, const Item_t *menuItem);
+    inline bool executeCallbackAction(const Action_t action) {
+        return executeCallbackAction(action, currentItemInfo.item);
+    }
+    void render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItems);
 
   public:
-    static Info_t getItemInfo(const Item_t *item);
     static const char *getLabel(const Item_t *item);
     static const Item_t *getPrev(const Item_t *item);
     static const Item_t *getNext(const Item_t *item);
@@ -69,6 +74,7 @@ class Engine {
     static const Item_t *getParent(const Item_t *item);
     static const Item_t *getChild(const Item_t *item);
 };
+
 }; // end namespace Menu
 
 // ----------------------------------------------------------------------------

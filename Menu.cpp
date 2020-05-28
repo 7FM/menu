@@ -37,17 +37,16 @@ const Item_t *Engine::getChild(const Item_t *item) {
     return (const Item_t *)readPtr(item, offsetof(Item_t, Child));
 }
 
-Info_t Engine::getItemInfo(const Item_t *item) {
-    Info_t result = {0, 0};
-    const Item_t *i = getChild(getParent(item));
-    for (; i != NULL; i = getNext(i)) {
-        ++result.siblings;
-        if (i == item) {
-            result.position = result.siblings;
+static inline void updateItemInfo(Engine &en) {
+    en.currentItemInfo.siblings = 0;
+
+    const Item_t *i = Engine::getChild(Engine::getParent(en.currentItemInfo.item));
+    for (; i != NULL; i = Engine::getNext(i)) {
+        ++en.currentItemInfo.siblings;
+        if (i == en.currentItemInfo.item) {
+            en.currentItemInfo.position = en.currentItemInfo.siblings;
         }
     }
-
-    return result;
 }
 
 // ----------------------------------------------------------------------------
@@ -55,8 +54,7 @@ Info_t Engine::getItemInfo(const Item_t *item) {
 void Engine::navigate(const Item_t *targetItem) {
     if (targetItem != NULL) {
         // navigating back to parent
-        if (targetItem == getParent(currentItem)) {
-            lastInvokedItem = NULL;
+        if (targetItem == getParent(currentItemInfo.item)) {
             // exit/save callback decide if we should go back
             if (!executeCallbackAction(actionParent)) {
                 return;
@@ -65,64 +63,53 @@ void Engine::navigate(const Item_t *targetItem) {
         }
 
         // Save navigation change
-        previousItem = currentItem;
-        currentItem = targetItem;
-        executeCallbackAction(actionLabel);
+        previousItem = currentItemInfo.item;
+        currentItemInfo.item = targetItem;
+        //executeCallbackAction(actionLabel);
     }
 }
 
 // ----------------------------------------------------------------------------
 
 void Engine::invoke() {
-    bool preventTrigger = false;
-
-    /*
-    if (lastInvokedItem != currentItem) { // prevent 'invoke' twice in a row
-        lastInvokedItem = currentItem;
-        preventTrigger = true; // don't invoke 'trigger' at first Display event
-        executeCallbackAction(actionDisplay);
-    }
-    */
-
-    const Item_t *child = getChild(currentItem);
+    const Item_t *child = getChild(currentItemInfo.item);
     if (child != NULL) { // navigate to registered submenuitem
         navigate(child);
         forceNewRender = true;
-    } else { // call trigger in already selected item that has no child
-        if (!preventTrigger) {
-            executeCallbackAction(actionTrigger);
-        }
+    } else {
+        // call trigger in selected item that has no child
+        executeCallbackAction(actionTrigger);
     }
 }
 
 // ----------------------------------------------------------------------------
 
-bool Engine::executeCallbackAction(const Action_t action) {
-    if (currentItem != NULL) {
-        Callback_t callback = (Callback_t)readPtr(currentItem, offsetof(Item_t, Callback));
+bool Engine::executeCallbackAction(const Action_t action, const Item_t *menuItem) {
+    if (menuItem != NULL) {
+        const Callback_t *callback = (Callback_t *)readPtr(menuItem, offsetof(Item_t, Callback));
 
         if (callback != NULL) {
-            return (*callback)(action);
+            return callback(action, *this);
         }
     }
     return true;
 }
 
-void Engine::render(const RenderCallback_t render, uint8_t maxDisplayedMenuItems) {
-    if (currentItem == NULL) {
+void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItems) {
+    if (currentItemInfo.item == NULL) {
         return;
     }
 
     const uint8_t center = maxDisplayedMenuItems >> 1;
-    Info_t mi = getItemInfo(currentItem);
+    updateItemInfo(*this);
 
     uint8_t start = 0;
-    if (mi.position >= (mi.siblings - center)) { // at end
-        start = mi.siblings - maxDisplayedMenuItems;
+    if (currentItemInfo.position >= (uint8_t)(currentItemInfo.siblings - center)) { // at end
+        start = currentItemInfo.siblings - maxDisplayedMenuItems;
     } else {
-        start = mi.position - center;
+        start = currentItemInfo.position - center;
         if (maxDisplayedMenuItems & 0x01)
-            start--; // center if odd
+            --start; // center if odd
     }
 
     if (start & 0x80)
@@ -132,25 +119,35 @@ void Engine::render(const RenderCallback_t render, uint8_t maxDisplayedMenuItems
         // We need to clear the screen first
         // To make some optimization possible we will also give the count of entries to render afterwards
         // This might be used to not clear the complete screen
-        render(NULL, mi.siblings);
+        render(*this, NULL);
     } else if (start) {
         forceNewRender = true;
     }
 
-    uint8_t renderPosLow = mi.position - 1;
+    uint8_t renderPosLow = currentItemInfo.position - 1;
 
     // Going forward? If so we have to move the render frame one position up
-    if (!forceNewRender && previousItem && previousItem == getPrev(currentItem)) {
+    if (!forceNewRender && previousItem && previousItem == getPrev(currentItemInfo.item)) {
         --renderPosLow;
     }
 
+    const Item_t *currentItemBackup = currentItemInfo.item;
+    const uint8_t currentPositionBackup = currentItemInfo.position;
+
     uint8_t itemCount = 0;
+
     // first item in current menu level
-    for (const Item_t *i = getChild(getParent(currentItem)); i != NULL && itemCount < maxDisplayedMenuItems + start; i = getNext(i)) {
-        if (itemCount >= start && (forceNewRender || (itemCount >= renderPosLow && itemCount <= renderPosLow + 1)))
-            render(i, itemCount - start);
+    for (currentItemInfo.item = getChild(getParent(currentItemInfo.item)); currentItemInfo.item != NULL && currentItemInfo.position < maxDisplayedMenuItems + start; currentItemInfo.item = getNext(currentItemInfo.item)) {
+        if (itemCount >= start && (forceNewRender || (itemCount >= renderPosLow && itemCount <= renderPosLow + 1))) {
+            currentItemInfo.position = itemCount - start;
+            render(*this, currentItemBackup);
+            executeCallbackAction(actionDisplay);
+        }
         ++itemCount;
     }
+
+    currentItemInfo.item = currentItemBackup;
+    currentItemInfo.position = currentPositionBackup;
 
     forceNewRender = false;
 }
