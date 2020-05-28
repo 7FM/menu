@@ -1,3 +1,7 @@
+## WARNING
+This is a fork with a lot of changes which are not backwards compatible and might behave way different than the original repo!
+The examples are outdated as well.
+
 MicroMenu
 =========
 Copyright (c) 2014 karl@pitrich.com
