@@ -17,12 +17,10 @@
 #endif
 
 namespace Menu {
-typedef enum {
-    //actionNone = 0,
-    //actionLabel = (1 << 0),   // render label when user scrolls through menu items
-    actionDisplay = (1 << 1), // display menu, after user selected a menu item
-    actionTrigger = (1 << 2), // trigger was pressed while menu was already active
-    actionParent = (1 << 3),  // before moving to parent, useful for e.g. "save y/n?" or autosave
+typedef enum : uint8_t {
+    actionTrigger = (1 << 0), // trigger was pressed while menu was already active
+    actionParent = (1 << 1),  // before moving to parent, useful for e.g. "save y/n?" or autosave
+    actionDisplay = (1 << 2), // display the value of a menu item if exists
     actionCustom = (1 << 7)
 } Action_t;
 
