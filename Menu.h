@@ -67,6 +67,9 @@ class Engine {
     void render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItems);
 
   public:
+    // static variable to denote if Item_t entries are stored in progmem
+    static bool progMemEntries;
+
     static const char *getLabel(const Item_t *item);
     static const Item_t *getPrev(const Item_t *item);
     static const Item_t *getNext(const Item_t *item);

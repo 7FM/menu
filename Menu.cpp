@@ -13,8 +13,12 @@
 namespace Menu {
 // ----------------------------------------------------------------------------
 
+// Initialize static variable
+bool Engine::progMemEntries = true;
+
 static inline void *readPtr(const Item_t *item, uint8_t offset) {
-    return pgm_read_ptr(((uint8_t *)item) + offset);
+    uint8_t *targetAddress = ((uint8_t *)item) + offset;
+    return Engine::progMemEntries ? pgm_read_ptr(targetAddress) : *((void **)targetAddress);
 }
 
 const char *Engine::getLabel(const Item_t *item) {
