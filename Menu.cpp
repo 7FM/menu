@@ -143,7 +143,8 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
     uint8_t itemCount = 0;
 
     // first item in current menu level
-    for (currentItemInfo.item = getChild(getParent(currentItemInfo.item)); currentItemInfo.item != NULL && currentItemInfo.position < maxDisplayedMenuItems + start; currentItemInfo.item = getNext(currentItemInfo.item)) {
+    currentItemInfo.item = getChild(getParent(currentItemInfo.item));
+    for (; currentItemInfo.item != NULL && currentItemInfo.position < maxDisplayedMenuItems + start + 1;) {
         if (itemCount >= start && (forceNewRender || (itemCount >= renderPosLow && itemCount <= renderPosLow + 1))) {
             // Update the local index (starting at 1)
             currentItemInfo.position = itemCount - start + 1;
@@ -151,6 +152,9 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
             executeCallbackAction(actionDisplay);
         }
         ++itemCount;
+
+        // get the next item
+        currentItemInfo.item = getNext(currentItemInfo.item);
     }
 
     currentItemInfo.item = currentItemBackup;
