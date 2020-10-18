@@ -128,35 +128,55 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
         forceNewRender = true;
     }
 
-    // Convert index to starting at 0 index
-    uint8_t renderPosLow = currentItemInfo.position - 1;
-
-    // Going forward? If so we have to move the render frame one position up
-    if (!forceNewRender && previousItem && previousItem == getPrev(currentItemInfo.item)) {
-        --renderPosLow;
-    }
-
     const Item_t *currentItemBackup = currentItemInfo.item;
     // Calculate the relative index of the shown elements (starting at 1)
     const uint8_t currentPositionBackup = currentItemInfo.position - start;
 
-    uint8_t itemCount = 0;
+    // Can we optimize the element render count?
+    if (!forceNewRender) {
+        // Convert index to starting at 0 index
+        uint8_t renderPosLow = currentItemInfo.position - 1;
+
+        // Going forward? If so we have to move the render frame one position up
+        if (previousItem && previousItem == getPrev(currentItemInfo.item)) {
+            --renderPosLow;
+        }
+
+        // Adjust start index of rendering
+        start += renderPosLow;
+        // We need to apply this offset here too
+        currentItemInfo.position = renderPosLow;
+        // finally set render bound up to which element rendering is needed
+        renderPosLow += 2;
+        if (renderPosLow < maxDisplayedMenuItems) {
+            maxDisplayedMenuItems = renderPosLow;
+        }
+    } else {
+        // We need to render everything, set start position and end condition accordingly
+        currentItemInfo.position = 0;
+    }
 
     // first item in current menu level
     currentItemInfo.item = getChild(getParent(currentItemInfo.item));
-    for (; currentItemInfo.item != NULL && itemCount < maxDisplayedMenuItems + start;) {
-        if (itemCount >= start && (forceNewRender || (itemCount >= renderPosLow && itemCount <= renderPosLow + 1))) {
-            // Update the local index (starting at 1)
-            currentItemInfo.position = itemCount - start + 1;
-            render(*this, currentItemBackup);
-            executeCallbackAction(actionDisplay);
-        }
-        ++itemCount;
 
+    // Iterate to the start item
+    for (; start > 0; --start) {
         // get the next item
         currentItemInfo.item = getNext(currentItemInfo.item);
     }
 
+    // We know that we need to render at least one item -> lets use do while
+    do {
+        // Update the local index (starting at 1)
+        ++currentItemInfo.position;
+        render(*this, currentItemBackup);
+        executeCallbackAction(actionDisplay);
+
+        // get the next item
+        currentItemInfo.item = getNext(currentItemInfo.item);
+    } while (currentItemInfo.item != NULL && currentItemInfo.position < maxDisplayedMenuItems);
+
+    // Restore our currentItem information
     currentItemInfo.item = currentItemBackup;
     currentItemInfo.position = currentPositionBackup;
 
