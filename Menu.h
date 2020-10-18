@@ -49,6 +49,7 @@ class Engine {
   public:
     Info_t currentItemInfo = {0, 0, NULL};
     const Item_t *previousItem = NULL;
+    uint8_t prevStart = 0;
 
     bool forceNewRender = true;
 

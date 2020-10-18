@@ -124,9 +124,12 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
         // To make some optimization possible we will also give the count of entries to render afterwards
         // This might be used to not clear the complete screen
         render(*this, NULL);
-    } else if (start) {
+    } else if (prevStart != start) {
+        // If the start offset changed then we have to render once everything!
         forceNewRender = true;
     }
+
+    prevStart = start;
 
     const Item_t *currentItemBackup = currentItemInfo.item;
     // Calculate the relative index of the shown elements (starting at 1)
