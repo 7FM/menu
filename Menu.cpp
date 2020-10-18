@@ -112,12 +112,12 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
         start = currentItemInfo.siblings - maxDisplayedMenuItems;
     } else {
         start = currentItemInfo.position - center;
-        if (maxDisplayedMenuItems & 0x01)
-            --start; // center if odd
+        // center if odd
+        start -= maxDisplayedMenuItems & 0x01;
     }
 
     if (start & 0x80)
-        start = 0; // prevent overflow
+        start = 0; // prevent underflow
 
     if (forceNewRender) {
         // We need to clear the screen first
@@ -128,7 +128,7 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
         forceNewRender = true;
     }
 
-    // Absolute index
+    // Convert index to starting at 0 index
     uint8_t renderPosLow = currentItemInfo.position - 1;
 
     // Going forward? If so we have to move the render frame one position up
