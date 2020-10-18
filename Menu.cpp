@@ -144,7 +144,7 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
 
     // first item in current menu level
     currentItemInfo.item = getChild(getParent(currentItemInfo.item));
-    for (; currentItemInfo.item != NULL && currentItemInfo.position < maxDisplayedMenuItems + start + 1;) {
+    for (; currentItemInfo.item != NULL && itemCount < maxDisplayedMenuItems + start;) {
         if (itemCount >= start && (forceNewRender || (itemCount >= renderPosLow && itemCount <= renderPosLow + 1))) {
             // Update the local index (starting at 1)
             currentItemInfo.position = itemCount - start + 1;
