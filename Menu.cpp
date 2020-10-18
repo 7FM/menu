@@ -138,10 +138,10 @@ void Engine::render(const RenderCallback_t *render, uint8_t maxDisplayedMenuItem
     // Can we optimize the element render count?
     if (!forceNewRender) {
         // Convert index to starting at 0 index
-        uint8_t renderPosLow = currentItemInfo.position - 1;
+        uint8_t renderPosLow = currentPositionBackup - 1;
 
         // Going forward? If so we have to move the render frame one position up
-        if (previousItem && previousItem == getPrev(currentItemInfo.item)) {
+        if (previousItem && previousItem == getPrev(currentItemBackup)) {
             --renderPosLow;
         }
 
