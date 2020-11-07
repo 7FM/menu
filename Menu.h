@@ -35,13 +35,13 @@ typedef struct Item_s {
     const struct Item_s *Child;
     const Callback_t *Callback;
     const char *Label;
-} Item_t;
+} __attribute__((packed)) Item_t;
 
 typedef struct {
     uint8_t siblings;
     uint8_t position;
     const Item_t *item;
-} Info_t;
+} __attribute__((packed)) Info_t;
 
 typedef void RenderCallback_t(const Engine &engine, const Item_t *selectedItem);
 
